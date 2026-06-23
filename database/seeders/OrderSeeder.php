@@ -15,7 +15,7 @@ class OrderSeeder extends Seeder
         $storeIds = Store::pluck('id')->toArray();
 
         $ordersData = [];
-        $totalOrders = 50000;
+        $totalOrders = 500;
         $batchSize = 2500; 
 
         for ($i = 1; $i <= $totalOrders; $i++) {

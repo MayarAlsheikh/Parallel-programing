@@ -7,13 +7,16 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Cache;
+use App\Http\Controllers\ProductCacheController;
+use App\Http\Controllers\CheckoutAcidController;
 
+use App\Http\Controllers\InventoryController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-
+//الوظيفة 
 Route::post('/checkout/bad', [CheckoutController::class, 'checkoutWithRaceCondition']);
 Route::post('/checkout/safe-pessimistic', [CheckoutController::class, 'checkoutSafePessimistic']);
 Route::post('/checkout/safe-optimistic', [CheckoutController::class, 'checkoutSafeOptimistic']);
@@ -35,16 +38,37 @@ Route::post('/checkout/single-node', [CheckoutController::class, 'checkoutSingle
 
 Route::post('/checkout/load-distribution', [CheckoutController::class, 'checkoutWithLoadDistribution']);
 
+
+//المشروع النهائي 
+
+Route::get('/top-products/no-cache',[ProductCacheController::class, 'topSellingWithoutCache']);
+
+Route::get('/top-products/cache',[ProductCacheController::class, 'topSellingWithCache']);
+
+Route::delete('/top-products/cache',[ProductCacheController::class, 'clearCache']);
+
+Route::post('/buy-without-lock',[InventoryController::class, 'buyWithoutLock']);
+Route::post('/buy-with-lock',[InventoryController::class, 'buyWithDistributedLock']);
+
+
+Route::post('/checkout/no-acid', [CheckoutAcidController::class, 'checkoutWithoutAcid']);
+Route::post('/checkout/acid', [CheckoutAcidController::class, 'checkoutWithAcid']);
+
+
+
+
+
+
 Route::get('/metrics', function () {
     $output = "";
-    
+
     $routesList = Cache::get('metrics_registered_routes', []);
     foreach ($routesList as $item) {
         $route = $item['route'];
         $status = $item['status'];
-        
+
         $finalStatus = $statusCode ?? $status;
-        
+
         $counterKey = "metrics_requests_total_{$route}_{$finalStatus}";
         $count = Cache::get($counterKey, 0);
         $output .= "http_requests_total{route=\"$route\",status=\"$status\"} $count\n";
@@ -58,7 +82,7 @@ Route::get('/metrics', function () {
     foreach ($clusterList as $item) {
         $server = $item['server'];
         $status = $item['status'];
-        
+
         $counterKey = "metrics_cluster_total_{$server}_{$status}";
         $count = Cache::get($counterKey, 0);
         $output .= "cluster_requests_total{server=\"$server\",status=\"$status\"} $count\n";
